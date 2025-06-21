@@ -256,6 +256,16 @@ target("libcurl")
     add_includedirs("lib")
     add_includedirs("$(builddir)")
     
+    -- 确保curl_config.h在构建目录中可用
+    before_build(function (target)
+        local builddir = target:targetdir()
+        local config_h = path.join("lib", "curl_config.h")
+        local build_config_h = path.join(builddir, "curl_config.h")
+        if os.isfile(config_h) then
+            os.cp(config_h, build_config_h)
+        end
+    end)
+    
     -- SSL 支持
     if has_config("ssl") then
         if has_config("openssl") then
@@ -387,10 +397,7 @@ target("libcurl")
     end)
 target_end()
 
-target("test")
-    set_kind("binary")
-    add_files("src/main.c")
-    add_defines("TEST_DEFINE")
+-- Test target removed - main.c doesn't exist
 
 -- curl可执行文件目标
 if has_config("curl_exe") then
@@ -412,8 +419,10 @@ if has_config("curl_exe") then
         end
         
         -- 添加源文件
-        add_files("src/*.c")
         add_files("src/tool_*.c")
+        add_files("src/slist_wc.c")
+        add_files("src/var.c")
+        add_files("src/terminal.c")
         
         -- 添加头文件
         add_headerfiles("src/*.h")
@@ -423,6 +432,16 @@ if has_config("curl_exe") then
         add_includedirs("lib")
         add_includedirs("src")
         add_includedirs("$(builddir)")
+        
+        -- 确保curl_config.h在构建目录中可用
+        before_build(function (target)
+            local builddir = target:targetdir()
+            local config_h = path.join("lib", "curl_config.h")
+            local build_config_h = path.join(builddir, "curl_config.h")
+            if os.isfile(config_h) then
+                os.cp(config_h, build_config_h)
+            end
+        end)
         
         -- 添加依赖
         add_deps("libcurl")
