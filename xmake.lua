@@ -55,6 +55,10 @@ add_defines("HAVE_STDBOOL_H")
 
 -- Socket and I/O support
 add_defines("HAVE_FCNTL_O_NONBLOCK")
+add_defines("HAVE_LONGLONG")
+
+-- System information
+add_defines("CURL_OS=\"Linux\"")
 
 -- Disable optional features that require additional dependencies
 add_defines("CURL_DISABLE_LDAP")
@@ -96,7 +100,6 @@ add_defines("HAVE_GETSOCKNAME")
 add_defines("HAVE_GETPEERNAME")
 add_defines("HAVE_SETSOCKOPT")
 add_defines("HAVE_GETSOCKOPT")
-add_defines("HAVE_CLOSESOCKET")
 add_defines("HAVE_FCNTL")
 add_defines("HAVE_IOCTL")
 add_defines("HAVE_IOCTLSOCKET")
@@ -355,7 +358,6 @@ local LIB_CFILES = {
     "lib/strparse.c",
     "lib/strtok.c",
     "lib/strtoofft.c",
-    "lib/system_win32.c",
     "lib/telnet.c",
     "lib/tftp.c",
     "lib/timediff.c",
@@ -500,6 +502,16 @@ if get_config("enable_curl_exe") then
         set_kind("binary")
         add_files("src/*.c")
         
+        -- Add CURLX_CFILES for tool compilation (contains curlx_dyn_* functions)
+        add_files("lib/base64.c")
+        add_files("lib/curl_multibyte.c")
+        add_files("lib/dynbuf.c")
+        add_files("lib/nonblock.c")
+        add_files("lib/strtoofft.c")
+        add_files("lib/timediff.c")
+        add_files("lib/version_win32.c")
+        add_files("lib/warnless.c")
+        
         -- Add include directories for tool compilation
         add_includedirs("lib", "include")
         
@@ -510,10 +522,14 @@ if get_config("enable_curl_exe") then
         add_defines("HAVE_CONFIG_H")
         
         -- Link against the appropriate libcurl
+        -- Always try to link against shared library first, then static
         if get_config("enable_shared") then
             add_deps("libcurl_shared")
         elseif get_config("enable_static") then
             add_deps("libcurl_static")
+        else
+            -- If neither is enabled, default to shared
+            add_deps("libcurl_shared")
         end
         
         -- Cross-compilation settings
