@@ -53,8 +53,15 @@ add_defines("HAVE_STRUCT_SOCKADDR_STORAGE")
 add_defines("HAVE_BOOL_T")
 add_defines("HAVE_STDBOOL_H")
 
--- For compatibility with autotools/cmake: ensure BUILDING_LIBCURL is defined
-add_defines("BUILDING_LIBCURL")
+-- Socket and I/O support
+add_defines("HAVE_FCNTL_O_NONBLOCK")
+
+-- Disable optional features that require additional dependencies
+add_defines("CURL_DISABLE_LDAP")
+add_defines("CURL_DISABLE_LDAPS")
+
+-- For tool compilation (src/ directory)
+add_defines("BUILDING_CURL")
 
 -- Auto-load generated defines if available
 local auto_defines_file = "auto_defines.lua"
@@ -398,6 +405,9 @@ if get_config("enable_static") then
         set_kind("static")
         add_files(table.unpack(ALL_LIB_SOURCES))
         
+        -- Add BUILDING_LIBCURL for library compilation
+        add_defines("BUILDING_LIBCURL")
+        
         -- Platform-specific configurations
         if is_plat("windows") then
             set_basename("libcurl_a")
@@ -441,6 +451,9 @@ if get_config("enable_shared") then
     target("libcurl_shared")
         set_kind("shared")
         add_files(table.unpack(ALL_LIB_SOURCES))
+        
+        -- Add BUILDING_LIBCURL for library compilation
+        add_defines("BUILDING_LIBCURL")
         
         -- Platform-specific configurations
         if is_plat("windows") then
@@ -486,6 +499,15 @@ if get_config("enable_curl_exe") then
     target("curl")
         set_kind("binary")
         add_files("src/*.c")
+        
+        -- Add include directories for tool compilation
+        add_includedirs("lib", "include")
+        
+        -- Add necessary defines for tool compilation
+        -- Note: Only define BUILDING_CURL, not BUILDING_LIBCURL
+        -- This allows tool code to use curlx_dynbuf instead of dynbuf
+        add_defines("BUILDING_CURL")
+        add_defines("HAVE_CONFIG_H")
         
         -- Link against the appropriate libcurl
         if get_config("enable_shared") then
